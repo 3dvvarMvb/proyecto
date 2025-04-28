@@ -1,0 +1,8 @@
+{
+  "name": "waze-scraper",
+  "version": "1.0.0",
+  "dependencies": {
+    "puppeteer": "^20.0.0",
+    "cassandra-driver": "^4.6.3"
+  }
+}
