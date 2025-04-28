@@ -2,27 +2,23 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-// Configuración de la región metropolitana (Santiago de Chile)
+// Configuración
 const REGION_BOUNDS = {
   top: -33.3,
   bottom: -33.6,
   left: -70.85,
   right: -70.5
 };
+const TARGET_EVENTS = 10000;
+const SCRAPE_INTERVAL = 30000; // 30 segundos entre requests
 
-// Función para verificar si un evento ya existe
+// Función para verificar duplicados
 function isDuplicate(event, existingEvents) {
   return existingEvents.some(existing => {
-    // Comparar por ID si está disponible
     if (event.id && existing.id && event.id === existing.id) return true;
-    
-    // Comparar por coordenadas y tipo si no hay ID
-    const sameLocation = 
-      event.latitude === existing.latitude && 
-      event.longitude === existing.longitude;
+    const sameLocation = event.latitude === existing.latitude && 
+                       event.longitude === existing.longitude;
     const sameType = event.type === existing.type;
-    
-    // Considerar como duplicado si es el mismo tipo en la misma ubicación
     return sameLocation && sameType;
   });
 }
@@ -30,7 +26,6 @@ function isDuplicate(event, existingEvents) {
 // Función para obtener datos de Waze
 async function fetchWazeData() {
   const url = 'https://www.waze.com/live-map/api/georss';
-  
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
     'Referer': 'https://www.waze.com/live-map',
@@ -47,18 +42,17 @@ async function fetchWazeData() {
   };
 
   try {
-    console.log('📡 Consultando eventos de tráfico en la Región Metropolitana...');
+    console.log('Consultando API de Waze...');
     const response = await axios.get(url, { headers, params });
 
     if (!response.data || (!response.data.alerts && !response.data.jams)) {
-      console.log('⚠️ No se encontraron eventos.');
+      console.log('No se encontraron eventos en este ciclo.');
       return [];
     }
 
     const alerts = response.data.alerts || [];
     const jams = response.data.jams || [];
 
-    // Procesar alertas
     const processedAlerts = alerts.map(alert => ({
       id: alert.uuid,
       timestamp: alert.pubMillis,
@@ -71,11 +65,9 @@ async function fetchWazeData() {
       country: alert.country,
       reliability: alert.reliability,
       reportRating: alert.reportRating,
-      confidence: alert.confidence,
-      magvar: alert.magvar
+      confidence: alert.confidence
     }));
 
-    // Procesar atascos de tráfico
     const processedJams = jams.map(jam => ({
       id: jam.uuid,
       timestamp: jam.pubMillis,
@@ -87,77 +79,85 @@ async function fetchWazeData() {
       country: jam.country,
       speedKMH: jam.speedKMH,
       length: jam.length,
-      delay: jam.delay,
-      level: jam.level,
-      line: jam.line,
-      segments: jam.segments
+      delay: jam.delay
     }));
 
     return [...processedAlerts, ...processedJams];
   } catch (error) {
-    console.error('❌ Error consultando la API:', error.message);
-    throw error;
+    console.error('Error en la consulta a la API:', error.message);
+    return [];
   }
 }
 
-// Función para cargar eventos existentes
-function loadExistingEvents(filename = 'eventos.json') {
+// Función para manejar el archivo de eventos
+function handleEventFile() {
+  const filename = 'eventos.json';
   const filePath = path.join(__dirname, 'data', filename);
-  
-  if (!fs.existsSync(filePath)) {
-    return [];
-  }
 
-  try {
-    const data = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('❌ Error leyendo archivo existente:', error.message);
-    return [];
-  }
-}
-
-// Función para guardar datos en JSON
-function saveToJson(data, filename = 'eventos.json') {
-  try {
-    const filePath = path.join(__dirname, 'data', filename);
+  // Crear directorio si no existe
+  if (!fs.existsSync(path.dirname(filePath))) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    console.log(`📝 ${data.length} eventos guardados en ${filePath}`);
-  } catch (error) {
-    console.error('❌ Error guardando los datos:', error.message);
-    throw error;
   }
-}
 
-// Función principal
-async function main() {
-  try {
-    // Cargar eventos existentes
-    const existingEvents = loadExistingEvents();
-    console.log(`ℹ️ ${existingEvents.length} eventos cargados de archivo anterior`);
-
-    // Obtener nuevos eventos
-    const newEvents = await fetchWazeData();
-    console.log(`ℹ️ ${newEvents.length} nuevos eventos obtenidos`);
-
-    // Filtrar duplicados
-    const uniqueNewEvents = newEvents.filter(event => !isDuplicate(event, existingEvents));
-    console.log(`ℹ️ ${uniqueNewEvents.length} eventos nuevos no duplicados`);
-
-    // Combinar con existentes
-    const allEvents = [...existingEvents, ...uniqueNewEvents];
-    
-    // Guardar solo si hay eventos nuevos
-    if (uniqueNewEvents.length > 0) {
-      saveToJson(allEvents);
-    } else {
-      console.log('ℹ️ No hay eventos nuevos para guardar');
+  // Cargar eventos existentes o crear archivo nuevo
+  let existingEvents = [];
+  if (fs.existsSync(filePath)) {
+    try {
+      const data = fs.readFileSync(filePath, 'utf8');
+      existingEvents = JSON.parse(data);
+      console.log(`${existingEvents.length} eventos cargados del archivo existente.`);
+    } catch (error) {
+      console.error('Error leyendo archivo existente:', error.message);
     }
-  } catch (error) {
-    console.error('Error en el proceso principal:', error);
   }
+
+  return {
+    getEvents: () => existingEvents,
+    saveEvents: (events) => {
+      try {
+        fs.writeFileSync(filePath, JSON.stringify(events, null, 2));
+        console.log(`Datos guardados. Total acumulado: ${events.length} eventos.`);
+      } catch (error) {
+        console.error('Error guardando los datos:', error.message);
+      }
+    }
+  };
 }
 
-// Ejecutar el scraper
+// Función principal con bucle
+async function main() {
+  const eventFile = handleEventFile();
+  let allEvents = eventFile.getEvents();
+
+  console.log(`Objetivo: recolectar ${TARGET_EVENTS} eventos únicos.`);
+  console.log(`Iniciando con ${allEvents.length} eventos existentes.`);
+
+  while (allEvents.length < TARGET_EVENTS) {
+    try {
+      const newEvents = await fetchWazeData();
+      const uniqueNewEvents = newEvents.filter(event => !isDuplicate(event, allEvents));
+
+      if (uniqueNewEvents.length > 0) {
+        allEvents = [...allEvents, ...uniqueNewEvents];
+        eventFile.saveEvents(allEvents);
+      }
+
+      console.log(`Progreso: ${allEvents.length}/${TARGET_EVENTS} (${Math.round((allEvents.length/TARGET_EVENTS)*100)}%)`);
+
+      // Esperar antes de la próxima consulta si no hemos alcanzado el objetivo
+      if (allEvents.length < TARGET_EVENTS) {
+        console.log(`Esperando ${SCRAPE_INTERVAL/1000} segundos para el próximo ciclo...`);
+        await new Promise(resolve => setTimeout(resolve, SCRAPE_INTERVAL));
+      }
+    } catch (error) {
+      console.error('Error en el ciclo principal:', error.message);
+      // Esperar antes de reintentar si hay error
+      await new Promise(resolve => setTimeout(resolve, SCRAPE_INTERVAL));
+    }
+  }
+
+  console.log(`Objetivo alcanzado: ${allEvents.length} eventos recolectados.`);
+  console.log('Proceso completado.');
+}
+
 main();
