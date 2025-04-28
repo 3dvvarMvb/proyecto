@@ -124,7 +124,7 @@ function handleEventFile() {
   };
 }
 
-async function postToStorage(events, retries = 5) {
+async function postToStorage(events, retries = 10) {
     const url = 'http://storage:5000/events';
     for (let i = 1; i <= retries; i++) {
       try {
@@ -184,5 +184,4 @@ async function main() {
     console.error('Error enviando datos a storage:', error.message);
   }
 }
-
 main();

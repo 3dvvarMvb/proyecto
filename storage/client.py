@@ -51,7 +51,7 @@ def connect_with_retry(keyspace, hosts=['cassandra'], retries=5, delay=5):
 
 session = connect_with_retry('waze')
 
-# 2) Endpoint para recibir eventos
+# Endpoint para recibir eventos
 @app.route('/events', methods=['POST'])
 def receive_events():
     events = request.get_json()
@@ -63,6 +63,22 @@ def receive_events():
             if id_val is None:
                 continue
             id_val = str(id_val)
+
+            # defaults para los campos opcionales
+            timestamp     = ev.get('timestamp')
+            latitude      = ev.get('latitude')
+            longitude     = ev.get('longitude')
+            ev_type       = ev.get('type')
+            subtype       = ev.get('subtype', '')
+            street        = ev.get('street', '')
+            city          = ev.get('city', '')
+            country       = ev.get('country', '')
+            reliability   = ev.get('reliability', 0.0)
+            report_rating = ev.get('reportRating', 0.0)    # JSON usa reportRating, tabla reportrating
+            confidence    = ev.get('confidence', 0.0)
+            speedkmh      = ev.get('speedKMH', 0.0)        # JSON usa speedKMH, tabla speedkmh
+            length        = ev.get('length', 0.0)
+            delay         = ev.get('delay', 0.0)
 
             session.execute(
                 """
