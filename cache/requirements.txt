@@ -1,0 +1,7 @@
+redis==5.0.6  
+# Cliente Redis asíncrono si lo prefieres non-blocking
+aiohttp==3.11.18  
+# Métricas y logs
+prometheus-client==0.16.0  
+# Configuración vía archivos .env
+python-dotenv==1.0.0  

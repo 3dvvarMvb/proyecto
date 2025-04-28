@@ -1,0 +1,13 @@
+# Conexión a Cassandra
+cassandra-driver==3.25.0  
+# Distribuciones estadísticas y generación de números aleatorios
+numpy==1.24.3  
+scipy==1.10.1  
+# Utilidades para generación de datos sintéticos
+Faker==37.1.0  
+# Configuración vía archivos .env
+python-dotenv==1.0.0  
+# CLI para parametrizar ejecuciones
+click==8.1.7  
+# Para métricas y análisis de resultados
+pandas==2.2.3  

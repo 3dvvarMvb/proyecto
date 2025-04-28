@@ -1,8 +1,17 @@
 {
   "name": "waze-scraper",
   "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "dependencies": {
-    "puppeteer": "^20.0.0",
-    "cassandra-driver": "^4.6.3"
+    "axios": "^1.9.0",
+    "puppeteer": "^24.6.1",
+    "cassandra-driver": "^4.6.0"
   }
 }

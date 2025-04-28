@@ -17,7 +17,21 @@ services:
 
   scraper:
     build: ./scraper
-    depends_on: [cassandra]
+    depends_on: 
+      - cassandra
+      - storage
+    volumes:
+      - ./scraper/data:/app/data
+
+  storage:
+    build:
+      context: ./storage
+    image: proyecto_storage
+    container_name: storage
+    depends_on:
+      - cassandra
+    ports:
+      - "5000:5000"
 
   traffic-generator:
     build: ./traffic-generator
