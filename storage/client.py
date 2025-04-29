@@ -2,7 +2,29 @@ from flask import Flask, request, jsonify
 from cassandra.cluster import Cluster
 import time
 
+CASSANDRA_HOST = "cassandra"
+
 app = Flask(__name__)
+
+def wait_for_cassandra(host, timeout=60):
+    start = time.time()
+    while True:
+        try:
+            cluster = Cluster([host])
+            session = cluster.connect()
+            session.shutdown()
+            cluster.shutdown()
+            print("Cassandra está listo.")
+            break
+        except Exception as e:
+            if time.time() - start > timeout:
+                print("Timeout esperando Cassandra.")
+                raise e
+            print("Esperando Cassandra...")
+            time.sleep(3)
+
+# Antes de cualquier conexión:
+wait_for_cassandra(CASSANDRA_HOST)
 
 def ensure_keyspace(cluster, name):
     session = cluster.connect()
@@ -33,8 +55,10 @@ def ensure_table(session):
       );
     """)
 
-def connect_with_retry(keyspace, hosts=['cassandra'], retries=5, delay=5):
+def connect_with_retry(keyspace, hosts=['cassandra'], retries=20, delay=5):
     last_exc = None
+    print("[storage] Esperando a que Cassandra esté listo...")
+    time.sleep(10)  # Espera inicial extra
     for i in range(1, retries+1):
         try:
             cluster = Cluster(hosts)

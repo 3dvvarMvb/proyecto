@@ -1,0 +1,12 @@
+# Iniciar todos los contenedores
+sudo docker-compose up --build -d
+
+# Mostrar logs de todos los contenedores (en tiempo real)
+sudo docker-compose logs -f 
+
+# Terminar ejecución (detener y eliminar contenedores, redes y volúmenes)
+docker-compose down
+
+# Limpiar contenedores en caso de fallo
+docker-compose down --volumes --remove-orphans
+docker system prune -f --volumes

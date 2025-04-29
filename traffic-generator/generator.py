@@ -1,10 +1,8 @@
 from cassandra.cluster import Cluster
-import random, time, requests, argparse
+import random, time, requests, argparse,threading
 
 CACHE_URL = "http://cache-service:5000/cache"  # Cambia a cache-service (nombre del servicio Docker)
 CASSANDRA_HOST = "cassandra"
-
-time.sleep(15)  # Espera a que Cassandra esté listo
 
 def wait_for_cassandra(host, timeout=60):
     start = time.time()
@@ -71,13 +69,27 @@ def generate_poisson(event_ids, rate):
         time.sleep(interval)
         process_query(eid)
 
+def print_metrics_loop(interval=5):
+    while True:
+        try:
+            resp = requests.get(f"{CACHE_URL}/metrics", timeout=2)
+            if resp.status_code == 200:
+                metrics = resp.json()
+                print(f"[CACHE METRICS] Usage: {metrics['cache_usage']}/{metrics['cache_max_size']} | "
+                      f"Hit Rate: {metrics['hit_rate']:.2f} | Miss Rate: {metrics['miss_rate']:.2f} | "
+                      f"Evictions: {metrics['evictions']}")
+            else:
+                print("[CACHE METRICS] No response")
+        except Exception as e:
+            print(f"[CACHE METRICS] Error: {e}")
+        time.sleep(interval)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generador de tráfico")
-    parser.add_argument('--model', choices=['uniform','poisson'], default='uniform')
-    parser.add_argument('--min', type=float, default=1.0, help="intervalo mínimo (s)")
-    parser.add_argument('--max', type=float, default=5.0, help="intervalo máximo (s)")
-    parser.add_argument('--rate', type=float, default=1.0, help="tasa λ para Poisson")
-    args = parser.parse_args()
+    # Configuración editable en el código
+    MODEL = 'uniform'  # 'uniform' o 'poisson'
+    INTERVAL_MIN = 1.0  # intervalo mínimo (s)
+    INTERVAL_MAX = 5.0  # intervalo máximo (s)
+    POISSON_RATE = 1.0  # tasa λ para Poisson
 
     # Obtén todos los ids de eventos de Cassandra
     cluster = Cluster([CASSANDRA_HOST])
@@ -86,7 +98,15 @@ if __name__ == "__main__":
     event_ids = [row.id for row in rows]
     session.shutdown()
 
-    if args.model == 'uniform':
-        generate_uniform(event_ids, args.min, args.max)
+    process_query(event_ids[0])  # Consulta inicial para evitar que el primer evento tarde mucho
+    # Generador de eventos
+    if MODEL == 'uniform':
+        print(f"Usando modelo uniforme con intervalo [{INTERVAL_MIN}, {INTERVAL_MAX}] segundos")
+        generator_thread = threading.Thread(target=generate_uniform, args=(event_ids, INTERVAL_MIN, INTERVAL_MAX), daemon=True)
     else:
-        generate_poisson(event_ids, args.rate)
+        print(f"Usando modelo Poisson con tasa λ={POISSON_RATE}")
+        generator_thread = threading.Thread(target=generate_poisson, args=(event_ids, POISSON_RATE), daemon=True)
+
+    metrics_thread = threading.Thread(target=print_metrics_loop, daemon=True)
+    metrics_thread.start()
+    generator_thread.start()

@@ -27,43 +27,6 @@ metrics = {
     "ttl_count": 0
 }
 
-def save_metrics_and_plot():
-    # Obtener métricas actuales
-    info = r.info()
-    evictions = info.get("evicted_keys", 0)
-    metrics_data = {
-        "hits": metrics["hits"],
-        "misses": metrics["misses"],
-        "hit_rate": metrics["hits"] / metrics["requests"] if metrics["requests"] else 0,
-        "miss_rate": metrics["misses"] / metrics["requests"] if metrics["requests"] else 0,
-        "avg_response_time_ms": metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0,
-        "evictions": evictions,
-        "avg_ttl_used": metrics["ttl_sum"] / metrics["ttl_count"] if metrics["ttl_count"] else 0
-    }
-    # Guardar en JSON
-    with open("cache_metrics.json", "w") as f:
-        json.dump(metrics_data, f, indent=4)
-
-    # Graficar
-    labels = ["Hits", "Misses", "Evictions"]
-    values = [metrics["hits"], metrics["misses"], evictions]
-    plt.figure(figsize=(6,4))
-    plt.bar(labels, values, color=["green", "red", "orange"])
-    plt.title("Cache Metrics")
-    plt.ylabel("Count")
-    plt.savefig("cache_metrics_bar.png")
-    plt.close()
-
-    # Gráfico de tasas
-    rates_labels = ["Hit Rate", "Miss Rate"]
-    rates_values = [metrics_data["hit_rate"], metrics_data["miss_rate"]]
-    plt.figure(figsize=(6,4))
-    plt.bar(rates_labels, rates_values, color=["blue", "purple"])
-    plt.title("Cache Hit/Miss Rates")
-    plt.ylabel("Rate")
-    plt.savefig("cache_rates_bar.png")
-    plt.close()
-
 
 def _key(event_id):
     return f"event:{event_id}"
@@ -101,15 +64,19 @@ def set_event():
         r.set(_key(event_id), jsonify(data).data)
     return jsonify({"status": "ok"}), 200
 
+CACHE_MAX_SIZE = int(os.getenv("CACHE_MAX_SIZE", "256"))
+
 @app.route("/cache/metrics", methods=["GET"])
 def get_metrics():
     hit_rate = metrics["hits"] / metrics["requests"] if metrics["requests"] else 0
     miss_rate = metrics["misses"] / metrics["requests"] if metrics["requests"] else 0
     avg_time = metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0
     avg_ttl = metrics["ttl_sum"] / metrics["ttl_count"] if metrics["ttl_count"] else 0
-    # Evictions: usa info de Redis
     info = r.info()
     evictions = info.get("evicted_keys", 0)
+    # Cache usage: cuenta claves que empiezan con event:
+    cache_usage = r.scan_iter(match="event:*")
+    cache_usage_count = sum(1 for _ in cache_usage)
     return jsonify({
         "hits": metrics["hits"],
         "misses": metrics["misses"],
@@ -117,11 +84,10 @@ def get_metrics():
         "miss_rate": miss_rate,
         "avg_response_time_ms": avg_time,
         "evictions": evictions,
-        "avg_ttl_used": avg_ttl
+        "avg_ttl_used": avg_ttl,
+        "cache_usage": cache_usage_count,
+        "cache_max_size": CACHE_MAX_SIZE
     })
-
-# Registrar función para que se ejecute al terminar el proceso
-atexit.register(save_metrics_and_plot)
 
 
 if __name__ == "__main__":
