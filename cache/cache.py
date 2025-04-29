@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 import redis
 import os
 import time
+import json
+import matplotlib.pyplot as plt
+import atexit
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
@@ -23,6 +26,44 @@ metrics = {
     "ttl_sum": 0,
     "ttl_count": 0
 }
+
+def save_metrics_and_plot():
+    # Obtener métricas actuales
+    info = r.info()
+    evictions = info.get("evicted_keys", 0)
+    metrics_data = {
+        "hits": metrics["hits"],
+        "misses": metrics["misses"],
+        "hit_rate": metrics["hits"] / metrics["requests"] if metrics["requests"] else 0,
+        "miss_rate": metrics["misses"] / metrics["requests"] if metrics["requests"] else 0,
+        "avg_response_time_ms": metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0,
+        "evictions": evictions,
+        "avg_ttl_used": metrics["ttl_sum"] / metrics["ttl_count"] if metrics["ttl_count"] else 0
+    }
+    # Guardar en JSON
+    with open("cache_metrics.json", "w") as f:
+        json.dump(metrics_data, f, indent=4)
+
+    # Graficar
+    labels = ["Hits", "Misses", "Evictions"]
+    values = [metrics["hits"], metrics["misses"], evictions]
+    plt.figure(figsize=(6,4))
+    plt.bar(labels, values, color=["green", "red", "orange"])
+    plt.title("Cache Metrics")
+    plt.ylabel("Count")
+    plt.savefig("cache_metrics_bar.png")
+    plt.close()
+
+    # Gráfico de tasas
+    rates_labels = ["Hit Rate", "Miss Rate"]
+    rates_values = [metrics_data["hit_rate"], metrics_data["miss_rate"]]
+    plt.figure(figsize=(6,4))
+    plt.bar(rates_labels, rates_values, color=["blue", "purple"])
+    plt.title("Cache Hit/Miss Rates")
+    plt.ylabel("Rate")
+    plt.savefig("cache_rates_bar.png")
+    plt.close()
+
 
 def _key(event_id):
     return f"event:{event_id}"
@@ -78,6 +119,10 @@ def get_metrics():
         "evictions": evictions,
         "avg_ttl_used": avg_ttl
     })
+
+# Registrar función para que se ejecute al terminar el proceso
+atexit.register(save_metrics_and_plot)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

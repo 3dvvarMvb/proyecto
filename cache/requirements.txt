@@ -9,3 +9,5 @@ python-dotenv==1.0.0
 Flask>=2.0
 # Cliente DB
 cassandra-driver>=3.25
+
+matplotlib==3.10.1
