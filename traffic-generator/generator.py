@@ -44,10 +44,34 @@ def query_cassandra(event_id):
     row = session.execute("SELECT * FROM events WHERE id=%s", (event_id,))
     result = row.one()
     session.shutdown()
-    return dict(result._asdict()) if result else None
-
+    if result:
+        event_dict = dict(result._asdict())
+        # Verifica que todos los valores sean serializables
+        for k, v in event_dict.items():
+            if not isinstance(v, (str, int, float, bool, list, dict, type(None))):
+                event_dict[k] = str(v)
+        return event_dict
+    return None
 def _key(event_id):
     return f"event:{event_id}"
+
+def wait_for_redis(host, port, timeout=60):
+    start = time.time()
+    while True:
+        try:
+            r = redis.Redis(host=host, port=port)
+            if r.ping():
+                print("Redis está listo.")
+                return r
+        except Exception as e:
+            if time.time() - start > timeout:
+                print("Timeout esperando Redis.")
+                raise e
+            print("Esperando Redis...")
+            time.sleep(3)
+
+# Antes de usar redis_client
+redis_client = wait_for_redis(REDIS_HOST, REDIS_PORT)
 
 def get_from_cache(event_id):
     start = time.time()
@@ -70,15 +94,15 @@ def get_from_cache(event_id):
         metrics["misses"] += 1
     return None
 
-def set_in_cache(event):
+def set_in_cache(event, ttl=3600):  # 1 hora de expiración
     try:
         import json
-        redis_client.set(_key(event["id"]), json.dumps(event))
+        redis_client.setex(_key(event["id"]), ttl, json.dumps(event).encode('utf-8'))
         return True
     except Exception as e:
-        #print(f"Error al guardar en cache Redis: {e}")
+        print(f"Error al guardar en cache Redis: {e}")
         return False
-
+    
 def process_query(event_id):
     result = get_from_cache(event_id)
     if result:

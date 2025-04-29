@@ -9,7 +9,7 @@ const REGION_BOUNDS = {
   left: -70.85,
   right: -70.5
 };
-const TARGET_EVENTS = 10;
+const TARGET_EVENTS = 10000;
 const SCRAPE_INTERVAL = 30000; // 30 segundos entre requests
 
 // Función para verificar duplicados
@@ -178,8 +178,7 @@ async function main() {
     console.log('Enviando datos a storage...');
     // Enviar datos a storage
     await new Promise(resolve => setTimeout(resolve, 10000)); // Esperar 10 segundos antes de enviar
-    await postToStorage(allEvents);
-    console.log('Datos enviados exitosamente.');
+    await postToStorage(allEvents); 
   } catch (error) {
     console.error('Error enviando datos a storage:', error.message);
   }
