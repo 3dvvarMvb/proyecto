@@ -11,6 +11,5 @@ python-dotenv==1.0.0
 click==8.1.7  
 # Para métricas y análisis de resultados
 pandas==2.2.3  
-
 requests==2.31.0
-# Para la generación de gráficos
+redis==5.0.6  

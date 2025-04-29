@@ -1,5 +1,9 @@
 from cassandra.cluster import Cluster
 import random, time, requests, argparse,threading
+import redis
+
+REDIS_HOST = "redis"
+REDIS_PORT = 6379
 
 CACHE_URL = "http://cache-service:5000/cache"  # Cambia a cache-service (nombre del servicio Docker)
 CASSANDRA_HOST = "cassandra"
@@ -24,6 +28,16 @@ def wait_for_cassandra(host, timeout=60):
 # Antes de cualquier conexión:
 wait_for_cassandra(CASSANDRA_HOST)
 
+# Conexión global a Redis
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+
+metrics = {
+    "hits": 0,
+    "misses": 0,
+    "requests": 0,
+    "total_time_ms": 0
+}
+
 def query_cassandra(event_id):
     cluster = Cluster([CASSANDRA_HOST])
     session = cluster.connect('waze')
@@ -32,20 +46,38 @@ def query_cassandra(event_id):
     session.shutdown()
     return dict(result._asdict()) if result else None
 
+def _key(event_id):
+    return f"event:{event_id}"
+
 def get_from_cache(event_id):
+    start = time.time()
     try:
-        resp = requests.get(f"{CACHE_URL}/{event_id}", timeout=2)
-        if resp.status_code == 200:
-            return resp.json()
+        value = redis_client.get(_key(event_id))
+        metrics["requests"] += 1
+        elapsed = (time.time() - start) * 1000
+        metrics["total_time_ms"] += elapsed
+        print(f"Tiempo de consulta cache Redis: {elapsed:.2f} ms")
+        
+        if value:
+            metrics["hits"] += 1
+            import json
+            return json.loads(value)
+        else:
+            metrics["misses"] += 1
+            return None
     except Exception as e:
-        print(f"Error consultando cache: {e}")
+        print(f"Error consultando cache Redis: {e}")
+        metrics["misses"] += 1
     return None
 
 def set_in_cache(event):
     try:
-        requests.post(CACHE_URL, json=event, timeout=2)
+        import json
+        redis_client.set(_key(event["id"]), json.dumps(event))
+        return True
     except Exception as e:
-        print(f"Error al guardar en cache: {e}")
+        #print(f"Error al guardar en cache Redis: {e}")
+        return False
 
 def process_query(event_id):
     result = get_from_cache(event_id)
@@ -59,30 +91,43 @@ def process_query(event_id):
     return result
 
 def generate_uniform(event_ids, interval_min, interval_max):
-    for eid in event_ids:
+    while True:
+        # Genera un intervalo aleatorio entre interval_min y interval_max   
+        eid = random.choice(event_ids)
         time.sleep(random.uniform(interval_min, interval_max))
         process_query(eid)
+        print_metrics()
+
 
 def generate_poisson(event_ids, rate):
-    for eid in event_ids:
+    while True:
+        # Genera un intervalo aleatorio usando la distribución de Poisson
+        eid = random.choice(event_ids)
         interval = random.expovariate(rate)
         time.sleep(interval)
         process_query(eid)
+        print_metrics()
 
-def print_metrics_loop(interval=5):
-    while True:
-        try:
-            resp = requests.get(f"{CACHE_URL}/metrics", timeout=2)
-            if resp.status_code == 200:
-                metrics = resp.json()
-                print(f"[CACHE METRICS] Usage: {metrics['cache_usage']}/{metrics['cache_max_size']} | "
-                      f"Hit Rate: {metrics['hit_rate']:.2f} | Miss Rate: {metrics['miss_rate']:.2f} | "
-                      f"Evictions: {metrics['evictions']}")
-            else:
-                print("[CACHE METRICS] No response")
-        except Exception as e:
-            print(f"[CACHE METRICS] Error: {e}")
-        time.sleep(interval)
+
+def print_metrics():
+        print("------ CACHE METRICS ------")
+        hit_rate = metrics["hits"] / metrics["requests"] if metrics["requests"] else 0
+        miss_rate = metrics["misses"] / metrics["requests"] if metrics["requests"] else 0
+        avg_time = metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0
+        print(f"Hits: {metrics['hits']}, Misses: {metrics['misses']}, Hit rate: {hit_rate:.2f}, Miss rate: {miss_rate:.2f}, Avg response time: {avg_time:.2f} ms")
+        print("---------------------------")
+
+def fill_cache(event_ids):
+    print("Llenando el cache con todos los eventos de Cassandra...")
+    for eid in event_ids:
+        event = query_cassandra(eid)
+        if event:
+            if set_in_cache(event)==True:
+                print(f"Evento {eid} guardado en cache.")
+        else:
+            print("Cache llenado con todos los eventos de Cassandra.")
+            break
+    print("Cache lleno")
 
 if __name__ == "__main__":
     # Configuración editable en el código
@@ -98,15 +143,14 @@ if __name__ == "__main__":
     event_ids = [row.id for row in rows]
     session.shutdown()
 
-    process_query(event_ids[0])  # Consulta inicial para evitar que el primer evento tarde mucho
+    fill_cache(event_ids)  # Llenar el cache antes de empezar a generar eventos
+
     # Generador de eventos
     if MODEL == 'uniform':
         print(f"Usando modelo uniforme con intervalo [{INTERVAL_MIN}, {INTERVAL_MAX}] segundos")
-        generator_thread = threading.Thread(target=generate_uniform, args=(event_ids, INTERVAL_MIN, INTERVAL_MAX), daemon=True)
+        generate_uniform(event_ids, INTERVAL_MIN, INTERVAL_MAX)
+
     else:
         print(f"Usando modelo Poisson con tasa λ={POISSON_RATE}")
-        generator_thread = threading.Thread(target=generate_poisson, args=(event_ids, POISSON_RATE), daemon=True)
-
-    metrics_thread = threading.Thread(target=print_metrics_loop, daemon=True)
-    metrics_thread.start()
-    generator_thread.start()
+        generate_poisson(event_ids, POISSON_RATE)
+        
