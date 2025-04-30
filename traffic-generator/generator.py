@@ -8,6 +8,24 @@ REDIS_PORT = 6379
 CACHE_URL = "http://cache-service:5000/cache"  # Cambia a cache-service (nombre del servicio Docker)
 CASSANDRA_HOST = "cassandra"
 
+POLICY = 'lifo'  # 'lifo' o 'lru' - política de remoción de caché
+
+
+def check_and_notify_cache_limit(event):
+    key_count = len(redis_client.keys("event:*"))
+    if key_count >= 200:
+        print(f"Límite de 200 claves alcanzado, notificando a storage con política {POLICY}...")
+        # Enviamos la política seleccionada junto con el evento
+        data = {
+            "event": event,
+            "policy": POLICY
+        }
+        response = requests.post("http://storage:5000/events-cache", json=data)
+        if response.ok:
+            print("Respuesta enviada a storage")
+        else:
+            print("Error notificando a storage:", response.text)
+
 def wait_for_cassandra(host, timeout=60):
     start = time.time()
     while True:
@@ -93,17 +111,6 @@ def get_from_cache(event_id):
         metrics["misses"] += 1
     return None
 
-def check_and_notify_cache_limit(event):
-    key_count = len(redis_client.keys("event:*"))
-    if key_count >= 200:
-        print("Límite de 200 claves alcanzado, notificando a storage...")
-        # Puedes enviar la lista de claves o solo notificar
-        response = requests.post("http://storage:5000/events-cache", json=event)
-        if response.ok:
-            print("Respuesta enviada a storage:")
-            # Aquí puedes procesar la respuesta y pasarla a cache.py si es necesario
-        else:
-            print("Error notificando a storage:", response.text)
 
 def set_in_cache(event, ttl=3600):
     try:

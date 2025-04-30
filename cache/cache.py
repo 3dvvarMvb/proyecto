@@ -4,7 +4,14 @@ import redis
 import requests
 #from collections import OrderedDict
 print(">>> INICIO DEL SCRIPT <<<")
-
+metrics = {
+    "hits": 0,
+    "misses": 0,
+    "requests": 0,
+    "total_time_ms": 0,
+    "evictions": 0,
+    "eviction_policy": ""
+}
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 CACHE_TTL = int(os.getenv("CACHE_TTL", "60"))
@@ -34,28 +41,51 @@ print("iniciando Cliente Redis")
 r = wait_for_redis(REDIS_HOST, REDIS_PORT)
 print("Cliente Redis inicializado.")
 
-def remove_keys_policy(keys):
+def remove_keys_policy(keys, policy="lru"):
     """
-    Atiende cada key recibida como una petición de uso reciente.
-    Si la key no existe y el cache está lleno, elimina la menos usada (LRU).
+    Atiende cada key recibida según la política de remoción especificada.
     """
+    metrics["eviction_policy"] = policy
     for key in keys:
-        # Si la key ya existe, actualiza su TTL para simular "uso reciente"
+        start_time = time.time()
+        metrics["requests"] += 1
+        
         if r.exists(key):
             r.expire(key, CACHE_TTL)
+            metrics["hits"] += 1
             print(f"TTL actualizado para {key} (uso reciente)")
         else:
-            # Si el cache está lleno, elimina la menos recientemente usada
+            metrics["misses"] += 1
             current_keys = r.keys("event:*")
             if len(current_keys) >= CACHE_CAPACITY:
-                # Encuentra la menos recientemente usada (por TTL más bajo)
-                lru_key = min(current_keys, key=lambda k: r.ttl(k))
+                if policy.lower() == "lifo":
+                    lru_key = current_keys[-1]
+                else:
+                    lru_key = min(current_keys, key=lambda k: r.ttl(k))
+                
                 r.delete(lru_key)
-                print(f"Cache lleno. Clave LRU eliminada: {lru_key.decode()}")
-            # Inserta la nueva key con TTL
+                metrics["evictions"] += 1
+                print(f"Cache lleno. Clave eliminada ({policy}): {lru_key.decode()}")
+            
             r.setex(key, CACHE_TTL, "placeholder")
             print(f"Clave nueva agregada al cache: {key}")
-            
+        
+        elapsed = (time.time() - start_time) * 1000
+        metrics["total_time_ms"] += elapsed
+
+def print_metrics():
+    print("\n------ CACHE METRICS ------")
+    hit_rate = metrics["hits"] / metrics["requests"] if metrics["requests"] else 0
+    miss_rate = metrics["misses"] / metrics["requests"] if metrics["requests"] else 0
+    avg_time = metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0
+    
+    print(f"Hits: {metrics['hits']}, Misses: {metrics['misses']}")
+    print(f"Hit rate: {hit_rate:.2%}, Miss rate: {miss_rate:.2%}")
+    print(f"Avg response time: {avg_time:.2f} ms")
+    print(f"Evictions: {metrics['evictions']} ({metrics['eviction_policy'].upper()} policy)")
+    print("---------------------------\n")
+
+
 def poll_storage_keys(interval=15):
     print("Iniciando polling a storage para control de claves...")
     while True:
@@ -76,7 +106,16 @@ def poll_storage_keys(interval=15):
 if __name__ == "__main__":
     # Puedes lanzar el polling en un hilo aparte si tienes más lógica principal
     print("Iniciando el servicio de cache...")
-
     clear_redis_cache()
-
+    
+    # Hilo para mostrar métricas cada 30 segundos
+    import threading
+    def metrics_loop():
+        while True:
+            print_metrics()
+            time.sleep(30)
+    
+    threading.Thread(target=metrics_loop, daemon=True).start()
+    
     poll_storage_keys(interval=15)
+

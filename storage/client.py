@@ -143,19 +143,30 @@ def receive_events():
             app.logger.error(f"Error inserting {id_val}: {e}")
     return jsonify({'inserted': inserted}), 200
 
+
 @app.route('/events-cache', methods=['POST'])
 def events_cache():
     global last_keys
     data = request.get_json()
-    # Si el request es una sola key (por ejemplo: {"key": "event:123"})
-    # o un evento completo, puedes ajustar según tu formato esperado
-    key = data.get("key") if "key" in data else data.get("id") or str(data)
-    last_keys.append(key)
-    print(f"Key recibida: {key} (total: {len(last_keys)})")
+    event = data.get("event", {})
+    policy = data.get("policy", "lru")  # Por defecto LRU si no se especifica
+    
+    key = f"event:{event.get('id', '')}" if event else str(data)
+    
+    if policy.lower() == 'lifo':
+        # Para LIFO: insertamos al principio
+        last_keys.insert(0, key)
+    else:
+        # Para LRU: insertamos al final (comportamiento original)
+        last_keys.append(key)
+    
+    print(f"Key recibida: {key} (política: {policy}, total: {len(last_keys)})")
+    
     if len(last_keys) >= 10:
-        print("Limite de 10 alcanzado, reiniciando arreglo last_keys.")
+        print(f"Límite de 10 alcanzado, reiniciando arreglo last_keys con política {policy}.")
         last_keys = []
-    return jsonify({"keys": last_keys, "added": key})
+    
+    return jsonify({"keys": last_keys, "added": key, "policy": policy})
 
 @app.route('/events-cache/keys', methods=['GET'])
 def get_last_keys():
