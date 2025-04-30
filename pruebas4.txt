@@ -1,0 +1,245 @@
+LIFO Uniforme
+
+------ CACHE METRICS ------
+Hits: 28, Misses: 0
+Hit rate: 100.00%, Miss rate: 0.00%
+Avg response time: 0.25 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+172.18.0.4 - - [30/Apr/2025 18:10:01] "POST /cache HTTP/1.1" 200 -
+Recibidas 8 keys desde storage.
+TTL actualizado para event:194718592 (uso reciente)
+TTL actualizado para event:158651670 (uso reciente)
+TTL actualizado para event:d6baeaad-76b8-45e4-b7ed-b369a8b9360d (uso reciente)
+TTL actualizado para event:190196348 (uso reciente)
+TTL actualizado para event:172589878 (uso reciente)
+TTL actualizado para event:f3083ea5-3458-49d1-8a55-b5641549a959 (uso reciente)
+TTL actualizado para event:14d399ce-0c75-4a23-bce8-4f8d7e7d97b2 (uso reciente)
+TTL actualizado para event:437fdac4-3d44-4cd5-9954-3ea0326176d7 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:10:01] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:10:16] "POST /cache HTTP/1.1" 200 -
+
+Recibidas 5 keys desde storage.
+TTL actualizado para event:717b42c6-156c-4924-8121-c6cc765844c8 (uso reciente)
+TTL actualizado para event:0d38a456-0c12-4071-bc7d-6be6f41eff13 (uso reciente)
+TTL actualizado para event:186780558 (uso reciente)
+TTL actualizado para event:193532518 (uso reciente)
+TTL actualizado para event:174362672 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:10:16] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:10:30] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 41, Misses: 0
+Hit rate: 100.00%, Miss rate: 0.00%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 5 keys desde storage.
+TTL actualizado para event:180695806 (uso reciente)
+TTL actualizado para event:163389538 (uso reciente)
+TTL actualizado para event:206294252 (uso reciente)
+TTL actualizado para event:baff9f0e-ed62-4ffc-933f-4d098eedb0b6 (uso reciente)
+TTL actualizado para event:167875620 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:10:31] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:10:45] "POST /cache HTTP/1.1" 200 -
+
+Recibidas 4 keys desde storage.
+TTL actualizado para event:162658428 (uso reciente)
+TTL actualizado para event:93094590 (uso reciente)
+TTL actualizado para event:167306360 (uso reciente)
+TTL actualizado para event:174355336 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:10:46] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:11:01] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 50, Misses: 0
+Hit rate: 100.00%, Miss rate: 0.00%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 3 keys desde storage.
+TTL actualizado para event:3bc5f941-61d4-4de4-822a-5b36c2aa77e7 (uso reciente)
+TTL actualizado para event:42f9fb32-7a56-4935-95f5-30f89cbc1ffe (uso reciente)
+TTL actualizado para event:0fdd4619-782b-48e2-8b2e-92e1b12b9f12 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:11:01] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:11:16] "POST /cache HTTP/1.1" 200 -
+
+Recibidas 4 keys desde storage.
+TTL actualizado para event:157829542 (uso reciente)
+TTL actualizado para event:165789838 (uso reciente)
+TTL actualizado para event:170155812 (uso reciente)
+TTL actualizado para event:153760118 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:11:16] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:11:30] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 57, Misses: 0
+Hit rate: 100.00%, Miss rate: 0.00%
+Avg response time: 0.29 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 9 keys desde storage.
+TTL actualizado para event:182889170 (uso reciente)
+TTL actualizado para event:176694162 (uso reciente)
+TTL actualizado para event:d3ae5c2c-ae0e-41d2-b9a1-59b1893c3f12 (uso reciente)
+TTL actualizado para event:158800100 (uso reciente)
+TTL actualizado para event:172658500 (uso reciente)
+TTL actualizado para event:184259192 (uso reciente)
+TTL actualizado para event:160852368 (uso reciente)
+TTL actualizado para event:abbf0a76-54fd-4b7a-bc7d-f3d360ff1fe4 (uso reciente)
+TTL actualizado para event:325a9483-c327-4691-b669-7b524c2c4f32 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:11:31] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:11:42] "POST /cache HTTP/1.1" 200 -
+
+Recibidas 4 keys desde storage.
+TTL actualizado para event:10c164bd-d628-49c5-ad6b-962d7a2d9270 (uso reciente)
+TTL actualizado para event:162292832 (uso reciente)
+TTL actualizado para event:191486558 (uso reciente)
+TTL actualizado para event:167143746 (uso reciente)
+
+172.18.0.4 - - [30/Apr/2025 18:11:47] "GET /cache?event_id=172207722 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:00] "GET /cache?event_id=159325512 HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 71, Misses: 3
+Hit rate: 95.95%, Miss rate: 4.05%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 7 keys desde storage.
+TTL actualizado para event:10c164bd-d628-49c5-ad6b-962d7a2d9270 (uso reciente)
+TTL actualizado para event:162292832 (uso reciente)
+TTL actualizado para event:191486558 (uso reciente)
+TTL actualizado para event:167143746 (uso reciente)
+TTL actualizado para event:172207722 (uso reciente)
+TTL actualizado para event:195420600 (uso reciente)
+TTL actualizado para event:159325512 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:12:07] "GET /cache?event_id=164588976 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:07] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:12:14] "GET /cache?event_id=196762404 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:15] "POST /cache HTTP/1.1" 200 -
+Recibidas 9 keys desde storage.
+TTL actualizado para event:10c164bd-d628-49c5-ad6b-962d7a2d9270 (uso reciente)
+TTL actualizado para event:162292832 (uso reciente)
+TTL actualizado para event:191486558 (uso reciente)
+TTL actualizado para event:167143746 (uso reciente)
+TTL actualizado para event:172207722 (uso reciente)
+TTL actualizado para event:195420600 (uso reciente)
+TTL actualizado para event:159325512 (uso reciente)
+TTL actualizado para event:164588976 (uso reciente)
+TTL actualizado para event:196762404 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:12:23] "GET /cache?event_id=162073970 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:23] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:12:30] "GET /cache?event_id=02c3a350-acd6-4659-b59e-3fe62f7a54fb HTTP/1.1" 404 -
+
+------ CACHE METRICS ------
+Hits: 87, Misses: 7
+Hit rate: 92.55%, Miss rate: 7.45%
+Avg response time: 0.27 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+172.18.0.4 - - [30/Apr/2025 18:12:31] "POST /cache HTTP/1.1" 200 -
+Recibidas 1 keys desde storage.
+TTL actualizado para event:02c3a350-acd6-4659-b59e-3fe62f7a54fb (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:12:40] "GET /cache?event_id=161712368 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:40] "POST /cache HTTP/1.1" 200 -
+Recibidas 2 keys desde storage.
+TTL actualizado para event:02c3a350-acd6-4659-b59e-3fe62f7a54fb (uso reciente)
+TTL actualizado para event:161712368 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:12:49] "GET /cache?event_id=170277600 HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:12:58] "GET /cache?event_id=161904676 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:12:58] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 91, Misses: 9
+Hit rate: 91.00%, Miss rate: 9.00%
+Avg response time: 0.27 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 4 keys desde storage.
+TTL actualizado para event:02c3a350-acd6-4659-b59e-3fe62f7a54fb (uso reciente)
+TTL actualizado para event:161712368 (uso reciente)
+TTL actualizado para event:170277600 (uso reciente)
+TTL actualizado para event:161904676 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:13:06] "GET /cache?event_id=155610394 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:13:06] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:13:14] "GET /cache?event_id=196427616 HTTP/1.1" 200 -
+Recibidas 6 keys desde storage.
+TTL actualizado para event:02c3a350-acd6-4659-b59e-3fe62f7a54fb (uso reciente)
+TTL actualizado para event:161712368 (uso reciente)
+TTL actualizado para event:170277600 (uso reciente)
+TTL actualizado para event:161904676 (uso reciente)
+TTL actualizado para event:155610394 (uso reciente)
+TTL actualizado para event:196427616 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:13:20] "GET /cache?event_id=e6ace699-514a-4c88-96e4-a7cdfb3ba7f0 HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:13:27] "GET /cache?event_id=191611442 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:13:28] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 103, Misses: 11
+Hit rate: 90.35%, Miss rate: 9.65%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 8 keys desde storage.
+TTL actualizado para event:02c3a350-acd6-4659-b59e-3fe62f7a54fb (uso reciente)
+TTL actualizado para event:161712368 (uso reciente)
+TTL actualizado para event:170277600 (uso reciente)
+TTL actualizado para event:161904676 (uso reciente)
+TTL actualizado para event:155610394 (uso reciente)
+TTL actualizado para event:196427616 (uso reciente)
+TTL actualizado para event:e6ace699-514a-4c88-96e4-a7cdfb3ba7f0 (uso reciente)
+TTL actualizado para event:191611442 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:13:35] "GET /cache?event_id=161977732 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:13:35] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:13:44] "GET /cache?event_id=164325558 HTTP/1.1" 200 -
+Recibidas 0 keys desde storage.
+172.18.0.4 - - [30/Apr/2025 18:13:50] "GET /cache?event_id=162884980 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:13:50] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:13:56] "GET /cache?event_id=f738dd04-8ee3-436f-bfec-5d074e0ccea1 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:13:56] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 112, Misses: 14
+Hit rate: 88.89%, Miss rate: 11.11%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------
+
+Recibidas 2 keys desde storage.
+TTL actualizado para event:162884980 (uso reciente)
+TTL actualizado para event:f738dd04-8ee3-436f-bfec-5d074e0ccea1 (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:14:04] "GET /cache?event_id=b03ef774-b4dd-42ea-919f-2e6cc51a969b HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:14:04] "POST /cache HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:14:12] "GET /cache?event_id=ebde31c2-954a-4cf9-977a-7209900e251e HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:14:12] "POST /cache HTTP/1.1" 200 -
+Recibidas 4 keys desde storage.
+TTL actualizado para event:162884980 (uso reciente)
+TTL actualizado para event:f738dd04-8ee3-436f-bfec-5d074e0ccea1 (uso reciente)
+TTL actualizado para event:b03ef774-b4dd-42ea-919f-2e6cc51a969b (uso reciente)
+TTL actualizado para event:ebde31c2-954a-4cf9-977a-7209900e251e (uso reciente)
+172.18.0.4 - - [30/Apr/2025 18:14:20] "GET /cache?event_id=186514294 HTTP/1.1" 200 -
+172.18.0.4 - - [30/Apr/2025 18:14:30] "GET /cache?event_id=184756824 HTTP/1.1" 404 -
+172.18.0.4 - - [30/Apr/2025 18:14:30] "POST /cache HTTP/1.1" 200 -
+
+------ CACHE METRICS ------
+Hits: 119, Misses: 17
+Hit rate: 87.50%, Miss rate: 12.50%
+Avg response time: 0.28 ms
+Evictions: 0 (LIFO policy)
+---------------------------

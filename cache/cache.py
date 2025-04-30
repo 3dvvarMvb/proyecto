@@ -43,7 +43,7 @@ print("iniciando Cliente Redis")
 r = wait_for_redis(REDIS_HOST, REDIS_PORT)
 print("Cliente Redis inicializado.")
 
-def remove_keys_policy(keys, policy="lru"):
+def remove_keys_policy(keys, policy="lifo"):
     metrics["eviction_policy"] = policy
     for key in keys:
         start_time = time.time()
