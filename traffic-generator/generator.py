@@ -28,8 +28,24 @@ def wait_for_cassandra(host, timeout=60):
 # Antes de cualquier conexión:
 wait_for_cassandra(CASSANDRA_HOST)
 
-# Conexión global a Redis
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+def wait_for_redis(host, port, timeout=60):
+    start = time.time()
+    while True:
+        try:
+            r = redis.Redis(host=host, port=port)
+            if r.ping():
+                print("Redis está listo.")
+                return r
+        except Exception as e:
+            if time.time() - start > timeout:
+                print("Timeout esperando Redis.")
+                raise e
+            print("Esperando Redis...")
+            time.sleep(3)
+
+# Antes de usar redis_client
+redis_client = wait_for_redis(REDIS_HOST, REDIS_PORT)
+
 
 metrics = {
     "hits": 0,
@@ -52,26 +68,9 @@ def query_cassandra(event_id):
                 event_dict[k] = str(v)
         return event_dict
     return None
+
 def _key(event_id):
     return f"event:{event_id}"
-
-def wait_for_redis(host, port, timeout=60):
-    start = time.time()
-    while True:
-        try:
-            r = redis.Redis(host=host, port=port)
-            if r.ping():
-                print("Redis está listo.")
-                return r
-        except Exception as e:
-            if time.time() - start > timeout:
-                print("Timeout esperando Redis.")
-                raise e
-            print("Esperando Redis...")
-            time.sleep(3)
-
-# Antes de usar redis_client
-redis_client = wait_for_redis(REDIS_HOST, REDIS_PORT)
 
 def get_from_cache(event_id):
     start = time.time()
@@ -94,10 +93,23 @@ def get_from_cache(event_id):
         metrics["misses"] += 1
     return None
 
-def set_in_cache(event, ttl=3600):  # 1 hora de expiración
+def check_and_notify_cache_limit(event):
+    key_count = len(redis_client.keys("event:*"))
+    if key_count >= 200:
+        print("Límite de 200 claves alcanzado, notificando a storage...")
+        # Puedes enviar la lista de claves o solo notificar
+        response = requests.post("http://storage:5000/events-cache", json=event)
+        if response.ok:
+            print("Respuesta enviada a storage:")
+            # Aquí puedes procesar la respuesta y pasarla a cache.py si es necesario
+        else:
+            print("Error notificando a storage:", response.text)
+
+def set_in_cache(event, ttl=3600):
     try:
         import json
         redis_client.setex(_key(event["id"]), ttl, json.dumps(event).encode('utf-8'))
+        check_and_notify_cache_limit(event)  # <-- Agrega esto
         return True
     except Exception as e:
         print(f"Error al guardar en cache Redis: {e}")
@@ -110,7 +122,7 @@ def process_query(event_id):
         return result
     print(f"Cache miss para id={event_id}, consultando Cassandra")
     result = query_cassandra(event_id)
-    if result:
+    if result :
         set_in_cache(result)
     return result
 
@@ -122,7 +134,6 @@ def generate_uniform(event_ids, interval_min, interval_max):
         process_query(eid)
         print_metrics()
 
-
 def generate_poisson(event_ids, rate):
     while True:
         # Genera un intervalo aleatorio usando la distribución de Poisson
@@ -131,7 +142,6 @@ def generate_poisson(event_ids, rate):
         time.sleep(interval)
         process_query(eid)
         print_metrics()
-
 
 def print_metrics():
         print("------ CACHE METRICS ------")
@@ -153,11 +163,12 @@ def fill_cache(event_ids):
             break
     print("Cache lleno")
 
+
 if __name__ == "__main__":
     # Configuración editable en el código
     MODEL = 'uniform'  # 'uniform' o 'poisson'
-    INTERVAL_MIN = 1.0  # intervalo mínimo (s)
-    INTERVAL_MAX = 5.0  # intervalo máximo (s)
+    INTERVAL_MIN = 10.0  # intervalo mínimo (s)
+    INTERVAL_MAX = 21.0  # intervalo máximo (s)
     POISSON_RATE = 1.0  # tasa λ para Poisson
 
     # Obtén todos los ids de eventos de Cassandra
@@ -176,5 +187,4 @@ if __name__ == "__main__":
 
     else:
         print(f"Usando modelo Poisson con tasa λ={POISSON_RATE}")
-        generate_poisson(event_ids, POISSON_RATE)
-        
+        generate_poisson(event_ids, POISSON_RATE)    

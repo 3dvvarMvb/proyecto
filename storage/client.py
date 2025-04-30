@@ -6,6 +6,8 @@ CASSANDRA_HOST = "cassandra"
 
 app = Flask(__name__)
 
+last_keys = []
+
 def wait_for_cassandra(host, timeout=60):
     start = time.time()
     while True:
@@ -140,6 +142,24 @@ def receive_events():
         except Exception as e:
             app.logger.error(f"Error inserting {id_val}: {e}")
     return jsonify({'inserted': inserted}), 200
+
+@app.route('/events-cache', methods=['POST'])
+def events_cache():
+    global last_keys
+    data = request.get_json()
+    # Si el request es una sola key (por ejemplo: {"key": "event:123"})
+    # o un evento completo, puedes ajustar según tu formato esperado
+    key = data.get("key") if "key" in data else data.get("id") or str(data)
+    last_keys.append(key)
+    print(f"Key recibida: {key} (total: {len(last_keys)})")
+    if len(last_keys) >= 10:
+        print("Limite de 10 alcanzado, reiniciando arreglo last_keys.")
+        last_keys = []
+    return jsonify({"keys": last_keys, "added": key})
+
+@app.route('/events-cache/keys', methods=['GET'])
+def get_last_keys():
+    return jsonify({"keys": last_keys})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

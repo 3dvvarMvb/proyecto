@@ -13,7 +13,7 @@ services:
     image: redis:7
     container_name: redis
     ports: ["6379:6379"]
-    command: redis-server --maxmemory 5mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 2mb --maxmemory-policy allkeys-lru
 
   scraper:
     build: ./scraper
@@ -40,8 +40,7 @@ services:
   cache-service:
     build: ./cache
     depends_on: [redis]
-    ports:
-      - "8080:5000"
+    command: python -u cache.py
 
 volumes:
   cassandra_data:
