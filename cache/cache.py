@@ -2,8 +2,10 @@ import os
 import time
 import redis
 import requests
-#from collections import OrderedDict
-print(">>> INICIO DEL SCRIPT <<<")
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
 metrics = {
     "hits": 0,
     "misses": 0,
@@ -15,7 +17,7 @@ metrics = {
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 CACHE_TTL = int(os.getenv("CACHE_TTL", "60"))
-CACHE_CAPACITY = 200  # Capacidad máxima de claves
+CACHE_CAPACITY = 20  # Capacidad máxima de claves
 
 def clear_redis_cache():
     """Elimina todas las claves de Redis al iniciar."""
@@ -42,9 +44,6 @@ r = wait_for_redis(REDIS_HOST, REDIS_PORT)
 print("Cliente Redis inicializado.")
 
 def remove_keys_policy(keys, policy="lru"):
-    """
-    Atiende cada key recibida según la política de remoción especificada.
-    """
     metrics["eviction_policy"] = policy
     for key in keys:
         start_time = time.time()
@@ -85,7 +84,6 @@ def print_metrics():
     print(f"Evictions: {metrics['evictions']} ({metrics['eviction_policy'].upper()} policy)")
     print("---------------------------\n")
 
-
 def poll_storage_keys(interval=15):
     print("Iniciando polling a storage para control de claves...")
     while True:
@@ -102,20 +100,67 @@ def poll_storage_keys(interval=15):
             print("Error conectando a storage:", e)
         time.sleep(interval)
 
+# --- NUEVO: Endpoints HTTP para cache ---
+
+import json
+
+@app.route("/cache", methods=["GET"])
+def cache_get():
+    event_id = request.args.get("event_id")
+    if not event_id:
+        return jsonify({"error": "event_id requerido"}), 400
+    key = f"event:{event_id}"
+    start = time.time()
+    metrics["requests"] += 1
+    value = r.get(key)
+    elapsed = (time.time() - start) * 1000
+    metrics["total_time_ms"] += elapsed
+    if value:
+        metrics["hits"] += 1
+        try:
+            return jsonify({"event": json.loads(value)}), 200
+        except Exception:
+            return jsonify({"event": value.decode()}), 200
+    else:
+        metrics["misses"] += 1
+        return jsonify({"event": None}), 404
+
+@app.route("/cache", methods=["POST"])
+def cache_set():
+    data = request.get_json()
+    if not data or "event" not in data or "id" not in data["event"]:
+        return jsonify({"error": "event con id requerido"}), 400
+    event = data["event"]
+    ttl = data.get("ttl", CACHE_TTL)
+    key = f"event:{event['id']}"
+    try:
+        r.setex(key, ttl, json.dumps(event).encode("utf-8"))
+        return jsonify({"ok": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/cache/metrics", methods=["GET"])
+def cache_metrics():
+    hit_rate = metrics["hits"] / metrics["requests"] if metrics["requests"] else 0
+    miss_rate = metrics["misses"] / metrics["requests"] if metrics["requests"] else 0
+    avg_time = metrics["total_time_ms"] / metrics["requests"] if metrics["requests"] else 0
+    return jsonify({
+        "hits": metrics["hits"],
+        "misses": metrics["misses"],
+        "hit_rate": hit_rate,
+        "miss_rate": miss_rate,
+        "avg_time_ms": avg_time,
+        "evictions": metrics["evictions"],
+        "eviction_policy": metrics["eviction_policy"]
+    })
 
 if __name__ == "__main__":
-    # Puedes lanzar el polling en un hilo aparte si tienes más lógica principal
-    print("Iniciando el servicio de cache...")
-    clear_redis_cache()
-    
-    # Hilo para mostrar métricas cada 30 segundos
     import threading
     def metrics_loop():
         while True:
             print_metrics()
             time.sleep(30)
-    
     threading.Thread(target=metrics_loop, daemon=True).start()
-    
-    poll_storage_keys(interval=15)
-
+    threading.Thread(target=poll_storage_keys, args=(15,), daemon=True).start()
+    clear_redis_cache()
+    app.run(host="0.0.0.0", port=5000)
