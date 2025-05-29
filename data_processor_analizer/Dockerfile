@@ -1,0 +1,28 @@
+FROM openjdk:8-jdk
+
+# Instalar dependencias necesarias
+RUN apt-get update && apt-get install -y wget tar
+
+# Descargar e instalar Hadoop (necesario para Pig)
+RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz && \
+    tar -zxvf hadoop-3.3.4.tar.gz && \
+    mv hadoop-3.3.4 /usr/local/hadoop && \
+    rm hadoop-3.3.4.tar.gz
+
+# Configurar variables de entorno para Hadoop
+ENV HADOOP_HOME=/usr/local/hadoop
+ENV PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+
+# Descargar e instalar Apache Pig
+RUN wget https://downloads.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz && \
+    tar -zxvf pig-0.17.0.tar.gz && \
+    mv pig-0.17.0 /usr/local/pig && \
+    rm pig-0.17.0.tar.gz
+
+# Configurar variables de entorno para Pig
+ENV PIG_HOME=/usr/local/pig
+ENV PATH=$PIG_HOME/bin:$PATH
+
+# Configurar el contenedor para que pueda ejecutar Apache Pig
+WORKDIR /scripts
+CMD ["bash"]

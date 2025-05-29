@@ -42,5 +42,13 @@ services:
     depends_on: [redis]
     command: python -u cache.py
 
+  pig-service:
+    build:
+      context: ./data_processor_analizer
+      dockerfile: Dockerfile
+    container_name: pig-service
+    volumes:
+      - ./scripts:/scripts
+
 volumes:
   cassandra_data:

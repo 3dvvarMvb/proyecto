@@ -240,15 +240,6 @@ Avg response time: 0.21 ms
 Evictions: 0 (LRU policy)
 ---------------------------
 
-Error conectando a storage: HTTPConnectionPool(host='storage', port=5000): Max retries exceeded with url: /events-cache/keys (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x707712f1d190>: Failed to resolve 'storage' ([Errno -3] Temporary failure in name resolution)"))
-172.18.0.4 - - [30/Apr/2025 17:25:38] "GET /cache?event_id=7c2d5e4c-75a5-425c-8464-5af5d1d95395 HTTP/1.1" 404 -
-172.18.0.4 - - [30/Apr/2025 17:25:38] "POST /cache HTTP/1.1" 200 -
-Error conectando a storage: HTTPConnectionPool(host='storage', port=5000): Max retries exceeded with url: /events-cache/keys (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x707712f0bfd0>: Failed to resolve 'storage' ([Errno -3] Temporary failure in name resolution)"))
-172.18.0.4 - - [30/Apr/2025 17:25:47] "GET /cache?event_id=d1c14935-7b3e-4837-a20b-95263fa65e22 HTTP/1.1" 404 -
-172.18.0.4 - - [30/Apr/2025 17:25:47] "POST /cache HTTP/1.1" 200 -
-172.18.0.4 - - [30/Apr/2025 17:25:54] "GET /cache?event_id=af657aa7-fc42-4d3b-a0a4-61efac57c627 HTTP/1.1" 404 -
-172.18.0.4 - - [30/Apr/2025 17:25:54] "POST /cache HTTP/1.1" 200 -
-
 ------ CACHE METRICS ------
 Hits: 113, Misses: 25
 Hit rate: 81.88%, Miss rate: 18.12%
