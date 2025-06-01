@@ -1,7 +1,7 @@
 FROM openjdk:8-jdk-slim
 
 # Instalar dependencias necesarias
-RUN apt-get update && apt-get install -y wget tar
+RUN apt-get update && apt-get install -y wget tar curl
 
 # Descargar e instalar Hadoop 
 RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz && \
@@ -18,20 +18,23 @@ RUN wget https://downloads.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz && \
     tar -zxvf pig-0.17.0.tar.gz && \
     mv pig-0.17.0 /usr/local/pig && \
     rm pig-0.17.0.tar.gz
+# Copiar piggybank.jar compilado desde carpeta local
+COPY libs/piggybank.jar /usr/local/pig/piggybank.jar
+
 
 # Configurar variables de entorno para Pig
 ENV PIG_HOME=/usr/local/pig
 ENV PATH=$PIG_HOME/bin:$PATH
 
-# Configurar el contenedor para que pueda ejecutar Apache Pig
+# Crear carpetas para resultados y datos
 RUN mkdir -p results data
 
 # Copiar scripts
-COPY processor.pig .
-COPY export_events.sh .
+COPY /scripts/processor.pig .
+COPY /scripts/export_events.sh .
 
-# Dar permisos de ejecución al script de exportación
+# Dar permisos de ejecución
 RUN chmod +x export_events.sh
 
 # Comando por defecto
-CMD ["/bin/bash", "-c", "./export_events.sh && pig -x local processor.pig"] 
+CMD ["/bin/bash", "-c", "./export_events.sh && pig -x local processor.pig"]

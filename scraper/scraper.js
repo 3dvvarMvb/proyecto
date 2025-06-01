@@ -9,19 +9,19 @@ const REGION_BOUNDS = {
   left: -70.85,
   right: -70.5
 };
-const TARGET_EVENTS = 10000;
+const TARGET_EVENTS = 100000;
 const SCRAPE_INTERVAL = 30000; // 30 segundos entre requests
 
 // Función para verificar duplicados
-function isDuplicate(event, existingEvents) {
-  return existingEvents.some(existing => {
-    if (event.id && existing.id && event.id === existing.id) return true;
-    const sameLocation = event.latitude === existing.latitude && 
-                       event.longitude === existing.longitude;
-    const sameType = event.type === existing.type;
-    return sameLocation && sameType;
-  });
-}
+// function isDuplicate(event, existingEvents) {
+//   return existingEvents.some(existing => {
+//     if (event.id && existing.id && event.id === existing.id) return true;
+//     const sameLocation = event.latitude === existing.latitude && 
+//                        event.longitude === existing.longitude;
+//     const sameType = event.type === existing.type;
+//     return sameLocation && sameType;
+//   });
+// }
 
 // Función para obtener datos de Waze
 async function fetchWazeData() {
@@ -150,10 +150,10 @@ async function main() {
   while (allEvents.length < TARGET_EVENTS) {
     try {
       const newEvents = await fetchWazeData();
-      const uniqueNewEvents = newEvents.filter(event => !isDuplicate(event, allEvents));
+      
 
-      if (uniqueNewEvents.length > 0) {
-        allEvents = [...allEvents, ...uniqueNewEvents];
+      if (newEvents.length > 0) {
+        allEvents = [...allEvents, ...newEvents];
         eventFile.saveEvents(allEvents);
       }
 

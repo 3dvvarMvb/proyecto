@@ -50,6 +50,7 @@ services:
     container_name: pig-service
     volumes:
       - ./scripts:/scripts
+      - ./scraper/data:/data
 
 volumes:
   cassandra_data:
