@@ -25,9 +25,6 @@ def wait_for_cassandra(host, timeout=60):
             print("Esperando Cassandra...")
             time.sleep(3)
 
-# Antes de cualquier conexión:
-wait_for_cassandra(CASSANDRA_HOST)
-
 def ensure_keyspace(cluster, name):
     session = cluster.connect()
     session.execute(f"""
@@ -75,6 +72,8 @@ def connect_with_retry(keyspace, hosts=['cassandra'], retries=20, delay=5):
             time.sleep(delay)
     raise last_exc
 
+# Antes de cualquier conexión:
+wait_for_cassandra(CASSANDRA_HOST)
 session = connect_with_retry('waze')
 
 # Endpoint para recibir eventos
@@ -143,7 +142,6 @@ def receive_events():
             app.logger.error(f"Error inserting {id_val}: {e}")
     return jsonify({'inserted': inserted}), 200
 
-
 @app.route('/events-cache', methods=['POST'])
 def events_cache():
     global last_keys
@@ -171,6 +169,34 @@ def events_cache():
 @app.route('/events-cache/keys', methods=['GET'])
 def get_last_keys():
     return jsonify({"keys": last_keys})
+
+@app.route('/events/export', methods=['GET'])
+def export_events():
+    try:
+        rows = session.execute("SELECT * FROM events")
+        events = []
+        for row in rows:
+            events.append({
+                'id': row.id,
+                'timestamp': row.timestamp,
+                'latitude': row.latitude,
+                'longitude': row.longitude,
+                'type': row.type,
+                'subtype': row.subtype,
+                'street': row.street,
+                'city': row.city,
+                'country': row.country,
+                'reliability': row.reliability,
+                'reportrating': row.reportrating,
+                'confidence': row.confidence,
+                'speedkmh': row.speedkmh,
+                'length': row.length,
+                'delay': row.delay
+            })
+        return jsonify(events), 200
+    except Exception as e:
+        app.logger.error(f"Error exporting events: {e}")
+        return jsonify({'error': 'Failed to export events'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

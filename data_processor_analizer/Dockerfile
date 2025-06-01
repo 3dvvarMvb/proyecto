@@ -1,9 +1,9 @@
-FROM openjdk:8-jdk
+FROM openjdk:8-jdk-slim
 
 # Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y wget tar
 
-# Descargar e instalar Hadoop (necesario para Pig)
+# Descargar e instalar Hadoop 
 RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz && \
     tar -zxvf hadoop-3.3.4.tar.gz && \
     mv hadoop-3.3.4 /usr/local/hadoop && \
@@ -24,5 +24,14 @@ ENV PIG_HOME=/usr/local/pig
 ENV PATH=$PIG_HOME/bin:$PATH
 
 # Configurar el contenedor para que pueda ejecutar Apache Pig
-WORKDIR /scripts
-CMD ["bash"]
+RUN mkdir -p results data
+
+# Copiar scripts
+COPY processor.pig .
+COPY export_events.sh .
+
+# Dar permisos de ejecución al script de exportación
+RUN chmod +x export_events.sh
+
+# Comando por defecto
+CMD ["/bin/bash", "-c", "./export_events.sh && pig -x local processor.pig"] 
