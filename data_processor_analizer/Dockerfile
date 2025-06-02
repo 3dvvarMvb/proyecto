@@ -1,7 +1,10 @@
 FROM openjdk:8-jdk-slim
 
 # Instalar dependencias necesarias
-RUN apt-get update && apt-get install -y wget tar curl
+RUN apt-get update && apt-get install -y wget tar python3 python3-pip curl
+
+# Crear carpetas de datos y resultados
+RUN mkdir -p results data scripts
 
 # Descargar e instalar Hadoop 
 RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz && \
@@ -18,23 +21,18 @@ RUN wget https://downloads.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz && \
     tar -zxvf pig-0.17.0.tar.gz && \
     mv pig-0.17.0 /usr/local/pig && \
     rm pig-0.17.0.tar.gz
-# Copiar piggybank.jar compilado desde carpeta local
-COPY libs/piggybank.jar /usr/local/pig/piggybank.jar
-
 
 # Configurar variables de entorno para Pig
 ENV PIG_HOME=/usr/local/pig
 ENV PATH=$PIG_HOME/bin:$PATH
 
-# Crear carpetas para resultados y datos
-RUN mkdir -p results data
+# Copiar scripts al contenedor
+COPY scripts/export_events.sh /scripts/export_events.sh
+COPY scripts/processor.pig /scripts/processor.pig
+COPY scripts/json_to_csv.py /scripts/json_to_csv.py
 
-# Copiar scripts
-COPY /scripts/processor.pig .
-COPY /scripts/export_events.sh .
+# Dar permisos de ejecución al script
+RUN chmod +x /scripts/export_events.sh
 
-# Dar permisos de ejecución
-RUN chmod +x export_events.sh
-
-# Comando por defecto
-CMD ["/bin/bash", "-c", "./export_events.sh && pig -x local processor.pig"]
+# Comando por defecto al iniciar
+CMD ["/bin/bash", "-c", "/scripts/export_events.sh && pig -x local /scripts/processor.pig"]
