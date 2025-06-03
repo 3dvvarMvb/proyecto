@@ -7,7 +7,7 @@ data = LOAD 'data/eventos.csv' USING PigStorage(',') AS (
     length:float, delay:float
 );
 
--- Filtro: datos válidos y confiables
+-- Filtro: datos validos
 cleaned = FILTER data BY
     latitude IS NOT NULL AND latitude != 0.0 AND
     longitude IS NOT NULL AND longitude != 0.0 AND
@@ -31,7 +31,6 @@ normalized = FOREACH cleaned GENERATE
 deduplicated = DISTINCT normalized;
 
 -- Extraer solo fecha desde timestamp para agrupar
--- (ej: 2024-04-21 14:00:00 → 2024-04-21)
 formatted = FOREACH deduplicated GENERATE
     tipo_normalizado,
     street,
@@ -42,7 +41,7 @@ formatted = FOREACH deduplicated GENERATE
 -- Agrupar por tipo, comuna y día
 grouped = GROUP formatted BY (city, street, tipo_normalizado, fecha);
 
--- Contar incidentes similares por comuna/tipo/día
+-- Contar incidentes similares 
 resumen = FOREACH grouped GENERATE
     FLATTEN(group) AS (comuna, street, tipo, fecha),
     COUNT(formatted) AS cantidad_incidentes;
@@ -57,9 +56,9 @@ sh mkdir -p ./results;
 -- Guardar resultados en la carpeta local 'results'
 STORE resumen INTO './results/incidentes_por_dia' USING PigStorage(',');
 
--- ANÁLISIS ADICIONAL PARA MOSTRAR POR CONSOLA
+-- ANÁLISIS ADICIONAL PARA MOSTRAR 
 
--- 1. Comuna con más incidentes en total
+-- 1. Comuna con mas incidentes en total
 comuna_incidentes = GROUP resumen BY comuna;
 comuna_incidentes_count = FOREACH comuna_incidentes GENERATE
     group AS comuna,
@@ -68,7 +67,7 @@ comuna_incidentes_count = FOREACH comuna_incidentes GENERATE
 comuna_incidentes_max = ORDER comuna_incidentes_count BY total_incidentes DESC;
 comuna_max = LIMIT comuna_incidentes_max 1;
 
--- 2. Calle con más incidentes en total
+-- 2. Calle con mas incidentes en total
 calle_incidentes = GROUP resumen BY street;
 calle_incidentes_count = FOREACH calle_incidentes GENERATE
     group AS calle,
@@ -97,7 +96,7 @@ media_policia_comuna = FOREACH policia_comuna GENERATE
 media_policia_todas = FOREACH (GROUP media_policia_comuna ALL) GENERATE
     AVG(media_policia_comuna.media_policia) AS media_policia_total;
 
--- 5. Desviación estándar aproximada de incidentes por comuna
+-- 5. Desviacion estandar aproximada de incidentes por comuna
 -- Paso 1: Calcular la media por comuna
 incidentes_media_comuna = FOREACH comuna_incidentes GENERATE
     group AS comuna,
@@ -129,7 +128,7 @@ tipos_distintos_count = FOREACH tipos_distintos GENERATE
 tipos_distintos_max = ORDER tipos_distintos_count BY num_tipos_distintos DESC;
 top_comunas_tipos = LIMIT tipos_distintos_max 5;
 
--- Guardar resultados finales en directorios (sin archivos .txt adicionales)
+-- Guardar resultados finales en directorios
 sh rm -rf ./results/analisis_estadistico;
 sh mkdir -p ./results/analisis_estadistico;
 
