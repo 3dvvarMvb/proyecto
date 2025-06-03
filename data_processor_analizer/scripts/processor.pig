@@ -7,10 +7,13 @@ data = LOAD 'data/eventos.csv' USING PigStorage(',') AS (
     length:float, delay:float
 );
 
--- Filtrar datos válidos y confiables
-cleaned = FILTER data BY latitude IS NOT NULL AND longitude IS NOT NULL AND type IS NOT NULL AND reliability > 0.8;
+-- Filtro: datos válidos y confiables
+cleaned = FILTER data BY
+    latitude IS NOT NULL AND latitude != 0.0 AND
+    longitude IS NOT NULL AND longitude != 0.0 AND
+    type IS NOT NULL AND TRIM(type) != '';
 
--- Normalizar tipos
+-- Normalizar tipo de incidente
 normalized = FOREACH cleaned GENERATE
     id, timestamp, latitude, longitude,
     (CASE 
@@ -21,12 +24,24 @@ normalized = FOREACH cleaned GENERATE
     END) AS tipo_normalizado,
     subtype, street, city, country, reliability, reportrating, confidence, speedkmh, length, delay;
 
--- Agrupar por comuna y tipo
-grouped = GROUP normalized BY (city, tipo_normalizado);
+-- Eliminar duplicados exactos (por todos los campos)
+deduplicated = DISTINCT normalized;
 
--- Contar incidentes
-counts = FOREACH grouped GENERATE
-    FLATTEN(group) AS (city, tipo), COUNT(normalized) AS total;
+-- Extraer solo fecha desde timestamp para agrupar
+-- (ej: 2024-04-21 14:00:00 → 2024-04-21)
+formatted = FOREACH deduplicated GENERATE
+    tipo_normalizado,
+    city,
+    SUBSTRING(timestamp, 0, 10) AS fecha,
+    subtype AS descripcion;
+
+-- Agrupar por tipo, comuna y día
+grouped = GROUP formatted BY (city, tipo_normalizado, fecha);
+
+-- Contar incidentes similares por comuna/tipo/día
+resumen = FOREACH grouped GENERATE
+    FLATTEN(group) AS (comuna, tipo, fecha),
+    COUNT(formatted) AS cantidad_incidentes;
 
 -- Guardar resultados
-STORE counts INTO 'results/summary_by_city_type' USING PigStorage(',');
+STORE resumen INTO 'results/incidentes_por_dia' USING PigStorage(',');
