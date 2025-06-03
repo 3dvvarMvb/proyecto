@@ -90,7 +90,3 @@ Donde [servicio] puede ser: cassandra, redis, storage, cache-service, scraper, o
 
 - **Error de conexión a Cassandra**: Verificar que el puerto 9042 esté disponible.
 - **Error de memoria en Redis**: Redis está configurado con un límite de 2MB. Puede ajustarse en el docker-compose.yml según sea necesario.
-
-## Contribución
-
-Para contribuir al proyecto, por favor crear un fork del repositorio, realizar los cambios y enviar un pull request con una descripción detallada de los cambios realizados.
