@@ -50,6 +50,7 @@ services:
     container_name: pig-service
     volumes:
       - ./scraper/data:/data
+      - ./data_processor_analizer/results:/results:rw
 
 volumes:
   cassandra_data:

@@ -19,6 +19,9 @@ normalized = FOREACH cleaned GENERATE
     (CASE 
         WHEN type == 'ACCIDENT' THEN 'accidente'
         WHEN type == 'JAM' THEN 'atasco'
+        WHEN type == 'jam' THEN 'atasco'
+        WHEN type == 'POLICE' THEN 'policia_controlando'
+        WHEN type == 'HAZARD' THEN 'precaucion'
         WHEN type == 'ROAD_CLOSED' THEN 'corte'
         ELSE 'otro'
     END) AS tipo_normalizado,
@@ -43,5 +46,12 @@ resumen = FOREACH grouped GENERATE
     FLATTEN(group) AS (comuna, tipo, fecha),
     COUNT(formatted) AS cantidad_incidentes;
 
--- Guardar resultados
-STORE resumen INTO 'results/incidentes_por_dia' USING PigStorage(',');
+-- Eliminar el directorio de salida si ya existe
+sh rm -rf ./results/incidentes_por_dia;
+
+-- Crear la carpeta 'results' si no existe
+SET default_parallel 1;
+sh mkdir -p ./results;
+
+-- Guardar resultados en la carpeta local 'results'
+STORE resumen INTO './results/incidentes_por_dia' USING PigStorage(',');
