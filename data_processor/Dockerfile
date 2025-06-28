@@ -27,12 +27,18 @@ ENV PIG_HOME=/usr/local/pig
 ENV PATH=$PIG_HOME/bin:$PATH
 
 # Copiar scripts al contenedor
-COPY scripts/export_events.sh /scripts/export_events.sh
 COPY scripts/processor.pig /scripts/processor.pig
-COPY scripts/json_to_csv.py /scripts/json_to_csv.py
+COPY scripts/Obetener_data.py /scripts/Obetener_data.py
+COPY scripts/requirements.txt /scripts/requirements.txt
+COPY scripts/test_pipeline.py /scripts/test_pipeline.py
+COPY scripts/run_pipeline.sh /scripts/run_pipeline.sh
 
-# Dar permisos de ejecución al script
-RUN chmod +x /scripts/export_events.sh
+# Instalar dependencias de Python
+RUN pip3 install -r /scripts/requirements.txt
+
+# Dar permisos de ejecución a los scripts
+RUN chmod +x /scripts/Obetener_data.py
+RUN chmod +x /scripts/run_pipeline.sh
 
 # Comando por defecto al iniciar
-CMD ["/bin/bash", "-c", "/scripts/export_events.sh && pig -x local /scripts/processor.pig"]
+CMD ["/bin/bash", "-c", "python3 /scripts/test_pipeline.py"]

@@ -1,10 +1,11 @@
 redis==5.0.6  
 # Cliente Redis asíncrono si lo prefieres non-blocking
-aiohttp==3.11.18  
+aiohttp==3.9.5  
 # Métricas y logs
 prometheus-client==0.16.0  
 # Configuración vía archivos .env
 python-dotenv==1.0.0  
-#collecctions==3.13.3
+# HTTP requests
 requests==2.31.0
-matplotlib==3.10.1
+# Plotting library
+matplotlib==3.7.2

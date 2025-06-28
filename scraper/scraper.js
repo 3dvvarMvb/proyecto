@@ -125,11 +125,12 @@ function handleEventFile() {
 }
 
 async function postToStorage(events, retries = 10) {
-    const url = 'http://storage:5000/events';
+    const indexName = 'default_index'; // Nombre del índice en Elasticsearch
+    const url = `http://storage:5000/upload/json?index=${indexName}`;
     for (let i = 1; i <= retries; i++) {
       try {
         await axios.post(url, events, { headers: { 'Content-Type':'application/json' } });
-        console.log('Datos enviados exitosamente.');
+        console.log(`Datos enviados exitosamente al índice '${indexName}'.`);
         return;
       } catch (err) {
         console.error(`Intento ${i} fallido: ${err.message}`);

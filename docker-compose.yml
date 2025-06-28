@@ -1,27 +1,65 @@
 services:
-  cassandra:
-    image: cassandra:4
-    container_name: cassandra
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    container_name: elasticsearch
     environment:
-      - CASSANDRA_CLUSTER_NAME=TrafficCluster
-      - CASSANDRA_NUM_TOKENS=16
-    ports: ["9042:9042"]
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
-      - cassandra_data:/var/lib/cassandra
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    networks:
+      - elastic-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
 
   redis:
     image: redis:7
     container_name: redis
-    ports: ["6379:6379"]
-    command: redis-server --maxmemory 2mb --maxmemory-policy allkeys-lru
+    ports: 
+      - "6379:6379"
+    command: redis-server --maxmemory 100mb --maxmemory-policy allkeys-lru
+    networks:
+      - elastic-net
 
   scraper:
     build: ./scraper
     depends_on: 
-      - cassandra
-      - storage
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      storage:
+        condition: service_started
     volumes:
       - ./scraper/data:/app/data
+    networks:
+      - elastic-net
 
   storage:
     build:
@@ -29,28 +67,48 @@ services:
     image: proyecto_storage
     container_name: storage
     depends_on:
-      - cassandra
+      elasticsearch:
+        condition: service_healthy  
+      redis:
+        condition: service_started
     ports:
       - "5000:5000"
+    networks:
+      - elastic-net  
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
   cache-service:
     build: ./cache
-    depends_on: [redis]
+    depends_on: 
+      - redis
     command: python -u cache.py
+    networks:
+      - elastic-net
 
   pig-service:
     build:
-      context: ./data_processor_analizer
+      context: ./data_processor
       dockerfile: Dockerfile
-
     depends_on: 
-      - cassandra
-      - storage
-      
+      elasticsearch:
+        condition: service_healthy
+      storage:
+        condition: service_started
     container_name: pig-service
     volumes:
       - ./scraper/data:/data
-      - ./data_processor_analizer/results:/results:rw
+      - ./data_processor/results:/results:rw
+    networks:
+      - elastic-net
+
+networks:
+  elastic-net:
+    driver: bridge
 
 volumes:
-  cassandra_data:
+  elasticsearch-data:
+    driver: local

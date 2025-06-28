@@ -10,3 +10,6 @@ docker-compose down
 # Limpiar contenedores en caso de fallo
 docker-compose down --volumes --remove-orphans
 docker system prune -f --volumes
+
+# Obtener TODOS los documentos usando Scroll API
+GET /get-waze-events?scroll=true
