@@ -243,23 +243,96 @@ def read_processed_results():
     
     return results
 
-def send_to_elasticsearch(data):
-    """Envía los resultados procesados a ElasticSearch para Kibana"""
-    indexName = 'procesed-waze_events'  # Nombre del índice en Elasticsearch
-
-    url = f'{PROCESSED_EVENTS_ENDPOINT}?index={indexName}'
+def send_document_to_elasticsearch(document, index_name):
+    """Envía un documento individual a ElasticSearch"""
+    url = f'{PROCESSED_EVENTS_ENDPOINT}?index={index_name}'
     try:
-        logger.info(f"Enviando datos procesados a ElasticSearch: {url}")
         response = requests.post(
             url,
-            json=data
+            json=document
         )
         response.raise_for_status()
-        logger.info("Datos enviados a ElasticSearch correctamente")
         return True
     except requests.exceptions.RequestException as e:
-        logger.error(f"Error al enviar a ElasticSearch: {e}")
+        logger.error(f"Error al enviar documento a ElasticSearch: {e}")
         return False
+
+def send_to_elasticsearch(data):
+    """Envía los resultados procesados a ElasticSearch como documentos individuales"""
+    success_count = 0
+    error_count = 0
+    
+    # Enviar incidentes individuales
+    logger.info(f"Enviando {len(data['incidentes_por_dia'])} incidentes como documentos individuales...")
+    for incidente in data['incidentes_por_dia']:
+        # Agregar metadatos al documento
+        document = {
+            **incidente,
+            'document_type': 'incidente',
+            'timestamp_processed': int(time.time())
+        }
+        
+        if send_document_to_elasticsearch(document, 'procesed-waze_events'):
+            success_count += 1
+        else:
+            error_count += 1
+    
+    # Enviar análisis estadísticos individuales
+    logger.info(f"Enviando {len(data['analisis'])} análisis estadísticos como documentos individuales...")
+    for analysis_type, analysis_value in data['analisis'].items():
+        # Crear documento para cada análisis estadístico
+        document = {
+            'document_type': 'analisis_estadistico',
+            'analysis_type': analysis_type,
+            'value': analysis_value,
+            'timestamp_processed': int(time.time())
+        }
+        
+        # Parsear valores específicos según el tipo de análisis
+        if analysis_type in ['comuna_max', 'calle_max']:
+            # Formato: "Nombre,Valor"
+            parts = analysis_value.split(',')
+            if len(parts) == 2:
+                document['name'] = parts[0]
+                document['count'] = int(parts[1])
+        elif analysis_type in ['media_accidentes', 'media_policia']:
+            # Formato: valor numérico
+            try:
+                document['numeric_value'] = float(analysis_value)
+            except ValueError:
+                document['numeric_value'] = 0
+        elif analysis_type == 'top_comunas':
+            # Formato: múltiples líneas "Comuna,Valor"
+            comunas = []
+            for line in analysis_value.split('\n'):
+                parts = line.split(',')
+                if len(parts) == 2:
+                    comunas.append({'comuna': parts[0], 'count': int(parts[1])})
+            document['top_comunas'] = comunas
+        elif analysis_type == 'desviacion':
+            # Formato: múltiples líneas "Comuna,Desviacion"
+            desviaciones = []
+            for line in analysis_value.split('\n'):
+                parts = line.split(',')
+                if len(parts) == 2:
+                    try:
+                        desviaciones.append({'comuna': parts[0], 'desviacion': float(parts[1])})
+                    except ValueError:
+                        continue
+            document['desviaciones'] = desviaciones
+        
+        if send_document_to_elasticsearch(document, 'procesed-waze_events'):
+            success_count += 1
+        else:
+            error_count += 1
+    
+    total_documents = len(data['incidentes_por_dia']) + len(data['analisis'])
+    logger.info(f"Enviados {success_count}/{total_documents} documentos exitosamente")
+    
+    if error_count > 0:
+        logger.warning(f"{error_count} documentos fallaron al enviarse")
+    
+    return error_count == 0
 
 def main():
     """Proceso principal - Pipeline completo de procesamiento de datos"""
@@ -363,3 +436,20 @@ def log_pipeline_summary(results):
         
     except Exception as e:
         logger.warning(f"Error al generar resumen: {e}")
+
+if __name__ == "__main__":
+    logger.info("Iniciando script de procesamiento de datos Waze")
+    try:
+        success = main()
+        if success:
+            logger.info("Script ejecutado exitosamente")
+            sys.exit(0)
+        else:
+            logger.error("Script falló")
+            sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Script interrumpido por el usuario")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Error crítico en el script: {e}")
+        sys.exit(1)

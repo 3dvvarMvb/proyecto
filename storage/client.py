@@ -122,9 +122,10 @@ def delete_index(index_name):
 
 @app.route('/get-waze-events', methods=['GET'])
 def get_waze_events():
-    """Endpoint para obtener todos los datos del índice waze-events de Elasticsearch"""
+    """Endpoint para obtener todos los datos de un índice específico de Elasticsearch"""
     try:
-        # Obtener parámetros opcionales
+        # Obtener parámetros
+        index_name = request.args.get('index', 'default_index')  # Parámetro para el índice
         limit = request.args.get('limit', type=int)
         use_scroll = request.args.get('scroll', 'true').lower() == 'true'
         
@@ -137,12 +138,13 @@ def get_waze_events():
                 "size": limit
             }
             
-            result = es_handler.search('default_index', query)
+            result = es_handler.search(index_name, query)
             documents = [hit['_source'] for hit in result['hits']['hits']]
             
             return jsonify({
                 "data": documents,
                 "total": result['hits']['total']['value'],
+                "index": index_name,
                 "method": "search"
             }), 200
         
@@ -158,7 +160,7 @@ def get_waze_events():
                 "size": 1000  # Tamaño de batch por scroll
             }
             
-            result = es_handler.search('default_index', query, scroll='2m')
+            result = es_handler.search(index_name, query, scroll='2m')
             scroll_id = result['_scroll_id']
             
             # Procesar primer batch
@@ -177,6 +179,7 @@ def get_waze_events():
             return jsonify({
                 "data": all_documents,
                 "total": len(all_documents),
+                "index": index_name,
                 "method": "scroll"
             }), 200
         
@@ -189,20 +192,21 @@ def get_waze_events():
                 "size": 10000  # Máximo permitido por defecto
             }
             
-            result = es_handler.search('default_index', query)
+            result = es_handler.search(index_name, query)
             documents = [hit['_source'] for hit in result['hits']['hits']]
             
             return jsonify({
                 "data": documents,
                 "total": result['hits']['total']['value'],
                 "returned": len(documents),
+                "index": index_name,
                 "method": "search_limited",
                 "note": "Use ?scroll=true para obtener todos los documentos o ?limit=N para limitar resultados"
             }), 200
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 @app.route('/events-cache', methods=['POST'])
 def events_cache():
     """Guardar evento en caché Redis"""
